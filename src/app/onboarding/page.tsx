@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Home, Search, User, MapPin } from "lucide-react";
+import { Home, Search, User, MapPin, Plus } from "lucide-react";
 import Link from "next/link";
+
 // Job interface
 interface Job {
   uuid: string;
@@ -35,7 +36,6 @@ interface Proposal {
 function Page() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
-  const [loader, setLoader] = useState<string | null>(null);
   const [userProposals, setUserProposals] = useState<Array<{ job: Job; proposal: Proposal }>>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showAllJobs, setShowAllJobs] = useState(true);
@@ -79,14 +79,24 @@ function Page() {
   }, []);
 
   useEffect(() => {
-    if (showAllJobs) {
-      setFilteredJobs(jobs);
-    } else if (selectedCategory) {
-      setFilteredJobs(jobs.filter((job) => job.category === selectedCategory));
-    } else {
-      setFilteredJobs([]);
-    }
+    setFilteredJobs(
+      showAllJobs
+        ? jobs
+        : selectedCategory
+        ? jobs.filter((job) => job.category === selectedCategory)
+        : []
+    );
   }, [selectedCategory, jobs, showAllJobs]);
+
+  const handleCategoryChange = (category: string | null) => {
+    setSelectedCategory(category);
+    setShowAllJobs(category === null);
+  };
+
+  const handleProposalAction = (jobId: string, action: 'accept' | 'delete') => {
+    // Implement the logic for handling proposal actions
+    console.log(`${action} proposal for job ${jobId}`);
+  };
 
   return (
     <div className="flex h-screen bg-gray-900 text-white px-10">
@@ -94,18 +104,16 @@ function Page() {
       <aside className="w-1/5 bg-gray-800 text-white p-5">
         <nav>
           <ul>
-            <li className="flex items-center gap-3 p-3 text-lg cursor-pointer hover:text-blue-400">
-              <Home className="w-6 h-6" />
-              Home
-            </li>
-            <li className="flex items-center gap-3 p-3 text-lg cursor-pointer hover:text-blue-400">
-              <Search className="w-6 h-6" />
-              Explore
-            </li>
-            <li className="flex items-center gap-3 p-3 text-lg cursor-pointer hover:text-blue-400">
-              <User className="w-6 h-6" />
-              Profile
-            </li>
+            {[
+              { icon: Home, text: "Home" },
+              { icon: Search, text: "Explore" },
+              { icon: User, text: "Profile" },
+            ].map(({ icon: Icon, text }) => (
+              <li key={text} className="flex items-center gap-3 p-3 text-lg cursor-pointer hover:text-blue-400">
+                <Icon className="w-6 h-6" />
+                {text}
+              </li>
+            ))}
           </ul>
         </nav>
         <div className="mt-10">
@@ -113,62 +121,47 @@ function Page() {
           <div className="flex items-center space-x-2 mb-2">
             <input
               type="checkbox"
+              id="showAllJobs"
               checked={showAllJobs}
-              onChange={(e) => {
-                setShowAllJobs(e.target.checked);
-                setSelectedCategory(null);
-              }}
+              onChange={(e) => handleCategoryChange(e.target.checked ? null : selectedCategory)}
               className="form-checkbox"
             />
-            <label>Show All Jobs</label>
+            <label htmlFor="showAllJobs" className="cursor-pointer">Show All Jobs</label>
           </div>
-          <div className="flex items-center space-x-2">
-            <input
-              type="radio"
-              id="tech"
-              checked={selectedCategory === "tech"}
-              onChange={() => setSelectedCategory("tech")}
-              className="form-radio"
-            />
-            <label htmlFor="tech">Tech</label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <input
-              type="radio"
-              id="non-tech"
-              checked={selectedCategory === "non-tech"}
-              onChange={() => setSelectedCategory("non-tech")}
-              className="form-radio"
-            />
-            <label htmlFor="non-tech">Non-Tech</label>
-          </div>
-
-
-          <div className="mt-10 flex">
-          <h2 className="text-xl py-3">Create a Job</h2>
-          <Link href="/create">
-          <button>
-            <img src="https://cdn-icons-png.flaticon.com/512/1004/1004733.png" alt=""  className="h-10 hover:scale-110 hover:border-2 cursor-pointer hover:border-black  rounded-xl hover:bg-blue-400 transition duration-200 ml-3"/>
-          </button>
+          {["tech", "non-tech"].map((category) => (
+            <div key={category} className="flex items-center space-x-2">
+              <input
+                type="radio"
+                id={category}
+                checked={selectedCategory === category}
+                onChange={() => handleCategoryChange(category)}
+                className="form-radio"
+              />
+              <label htmlFor={category} className="capitalize">{category}</label>
+            </div>
+          ))}
+        </div>
+        <div className="mt-10 flex items-center">
+          <h2 className="text-xl">Create a Job</h2>
+          <Link href="/create" className="ml-3">
+            <button className="bg-blue-500 hover:bg-blue-600 p-2 rounded-full transition duration-200">
+              <Plus className="h-6 w-6" />
+            </button>
           </Link>
-          </div>
-
-
-
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-grow bg-gray-850 p-5">
+      <main className="flex-grow bg-gray-850 p-5 overflow-y-auto">
         {filteredJobs.length > 0 ? (
           filteredJobs.map((job) => (
             <div key={job.uuid} className="p-5 bg-gray-800 rounded-lg shadow-lg mb-4">
               <h2 className="text-2xl font-bold">{job.title}</h2>
-              <p>{job.description}</p>
-              <p>Budget: ₹{job.budget}</p>
-              <p>Skills: {job.skills.join(", ")}</p>
+              <p className="mt-2">{job.description}</p>
+              <p className="mt-2">Budget: ₹{job.budget}</p>
+              <p className="mt-2">Skills: {job.skills.join(", ")}</p>
               <div className="flex items-center mt-3 text-gray-400">
-                <MapPin className="w-5 h-5" />
+                <MapPin className="w-5 h-5 mr-2" />
                 <p>{job.location ? `${job.location.name}, ${job.location.stateCode}, ${job.location.countryCode}` : "Remote"}</p>
               </div>
 
@@ -176,17 +169,13 @@ function Page() {
               <div className="mt-4 flex gap-3">
                 <button
                   className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 transition"
-                  onClick={() => {
-                    // Logic for submitting a proposal
-                  }}
+                  onClick={() => handleProposalAction(job.uuid, 'accept')}
                 >
-                 Accept
+                  Accept
                 </button>
                 <button
                   className="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 transition"
-                  onClick={() => {
-                    // Logic for deleting a proposal
-                  }}
+                  onClick={() => handleProposalAction(job.uuid, 'delete')}
                 >
                   Delete
                 </button>
@@ -194,12 +183,12 @@ function Page() {
             </div>
           ))
         ) : (
-          <p>No jobs found</p>
+          <p className="text-center text-xl mt-10">No jobs found</p>
         )}
       </main>
 
       {/* Proposals Section */}
-      <aside className="w-1/5 p-5 bg-gray-850">
+      <aside className="w-1/5 p-5 bg-gray-850 overflow-y-auto">
         <h2 className="text-xl mb-4">Your Proposals</h2>
         {userProposals.length > 0 ? (
           userProposals.map((item, index) => (
