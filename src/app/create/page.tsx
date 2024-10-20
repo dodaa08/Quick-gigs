@@ -12,51 +12,49 @@ function CreateJobPage() {
   const [description, setDescription] = useState("");
   const [earn, setEarn] = useState(20); // default minimum budget ₹20
   const [time, setTime] = useState("");
-  const [location, setLocation] = useState({ name: "", stateCode: "", countryCode: "" });
-  const [skills, setSkills] = useState<string[]>([]);
+  const [location, setLocation] = useState("");
+  const [skills, setSkills] = useState("");
   const [category, setCategory] = useState("tech");
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+  
     // Constructing the full job data object
     const jobData = {
-      title,
+      title:  title,
+      discription: description,
+      price: earn, // Fix the field name from 'earn' to 'price' as per your table structure
+      skills: skills,
+      location : location,
     };
-
+  
     try {
       const { data, error } = await supabase
-      .from('jobs')
-      .insert([
-        { title: title },
-      ])
-      .select()
-    
-    
-
- 
+        .from('jobs')
+        .insert([jobData]) // Insert all fields in a single object
+        .select(); // Selecting after insert to confirm
+  
       if (error) throw error;
-
+  
       console.log("Job created:", data);
       setError(null); // Reset error if successful
-
+  
       // Optionally, reset the form fields after successful submission
       setTitle("");
       setDescription("");
       setEarn(20);
       setTime("");
-      setLocation({ name: "", stateCode: "", countryCode: "" });
-      setSkills([]);
+      setLocation("");
+      setSkills("");
       setCategory("tech");
-
+  
     } catch (error) {
       setError("Error creating job. Please try again."+ error);
       console.error("Error:", error);
     }
   };
-
- 
+  
 
 
   return (
@@ -119,25 +117,9 @@ function CreateJobPage() {
             <label className="block mb-2 text-sm font-medium">Location</label>
             <input
               type="text"
-              placeholder="City"
-              value={location.name}
-              onChange={(e) => setLocation({ ...location, name: e.target.value })}
-              className="w-full p-3 mb-2 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-              required
-            />
-            <input
-              type="text"
-              placeholder="State Code (e.g., MH)"
-              value={location.stateCode}
-              onChange={(e) => setLocation({ ...location, stateCode: e.target.value })}
-              className="w-full p-3 mb-2 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-              required
-            />
-            <input
-              type="text"
-              placeholder="Country Code (e.g., IN)"
-              value={location.countryCode}
-              onChange={(e) => setLocation({ ...location, countryCode: e.target.value })}
+              placeholder="Where ?"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
               className="w-full p-3 mb-2 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
               required
             />
@@ -147,8 +129,8 @@ function CreateJobPage() {
             <label className="block mb-2 text-sm font-medium">Skills (comma separated)</label>
             <input
               type="text"
-              value={skills.join(", ")}
-              onChange={(e) => setSkills(e.target.value.split(",").map((skill) => skill.trim()))}
+              value={skills}
+              onChange={(e) => setSkills(e.target.value)}
               className="w-full p-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
               placeholder="Enter required skills"
             />
