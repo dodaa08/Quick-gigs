@@ -8,7 +8,7 @@ export default function Header(){
     const { signOut } = useClerk()
     return(
         <>
-        <div className="flex justify-between bg-black h-18 text-black rounded">
+        <div className="flex justify-between bg-gray-900 h-18 text-black rounded">
             <div className="mt-5 ml-5 flex">
                 <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT4nxWJFT7giBQyh5p6n572vt4GGIARkHFjIw&s" alt="" className="h-10" />
                 <h1 className="text-white ml-5 mt-2">Quick Gigs</h1>
