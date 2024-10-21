@@ -4,6 +4,7 @@ import { Home, Search, User, MapPin, Plus } from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import TaskCard from "@/components/taskcard";
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../../components/ui/dialog";
 
 // Job interface
 interface Job {
@@ -22,10 +23,23 @@ interface Job {
     proposal: string;
     status: string | null;
   }>;
+  proposaluser?: Array<{
+    user_id: string;
+    name: string;
+    key: string | null;
+  }>;
   user_id: string;
   category: string;
+  user: {
+    name: string;
+    walletkey: string;
+  };
 }
-
+interface user{
+  uuid: string;
+  title: string;
+  walletkey: string;
+}
 // Proposal interface
 interface Proposal {
   user_id: string;
@@ -52,7 +66,13 @@ function Page() {
   const [showAllJobs, setShowAllJobs] = useState(true);
   const [fetchError, setFetchError] = useState<string>("");
   const [tasks, setTasks] = useState<Task[]>([]);
-
+  const [user, setuser] = useState<user[]>([]);
+  const [name, setName] = useState("");
+  const [walletKey, setWalletKey] = useState("");
+  const [isProfileCreated, setIsProfileCreated] = useState(false);
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const [proposals, setProposals] = useState<Job[]>([]);
+  const [proposalsuser, setProposalsuser] = useState<Job[]>([]);
   // Fetch jobs and tasks from Supabase
   useEffect(() => {
     const fetchJobs = async () => {
@@ -60,9 +80,56 @@ function Page() {
       if (error) {
         setFetchError("Error fetching jobs.");
         console.log(error);
-      } else if (data) {
+      } else if (data) {  
         setJobs(data);
         setFilteredJobs(data);
+        setFetchError("");
+      }
+    };
+    fetchJobs();
+    // fetchTasks();
+  }, []);
+
+
+  useEffect(() => {
+    const fetchprop = async () => {
+      const { data, error } = await supabase.from<user>("jobs").select("*");
+      if (error) {
+        setFetchError("Error fetching jobs.");
+        console.log(error);
+      } else if (data) {
+        setProposals(data); // Set the proposals with the fetched jobs
+        setFetchError("");
+      }
+    };
+
+    fetchprop();
+  }, []);
+
+  useEffect(() => {
+    const fetchuser = async () => {
+      const { data, error } = await supabase.from<user>("user").select("*");
+      if (error) {
+        setFetchError("Error fetching jobs.");
+        console.log(error);
+      } else if (data) {
+        setProposalsuser(data); // Set the proposals with the fetched jobs
+        setFetchError("");
+      }
+    };
+
+    fetchuser();
+  }, []);
+
+
+  useEffect(() => {
+    const fetchJobs = async () => {
+      const { data, error } = await supabase.from<user>("user").select("*");
+      if (error) {
+        setFetchError("Error fetching jobs.");
+        console.log(error);
+      } else  {
+        setuser(data);
         setFetchError("");
       }
     };
@@ -101,11 +168,51 @@ function Page() {
   };
 
   // Accept task and add it to accepted tasks
-  const acceptTask = (job: Job) => {
-    if (!acceptedTasks.some((task) => task.uuid === job.uuid)) {
-      setAcceptedTasks((prev) => [...prev, job]);
+  const acceptTask = async (job: Job) => {
+    if (!isProfileCreated) {
+      setProfileDialogOpen(true);
+    } else {
+      try {
+        const userdata = {
+          name: name,
+          walletKey: walletKey, // Ensure this matches your DB schema
+        };
+        // Save the accepted task to Supabase
+        const { data, error: insertError } = await supabase
+          .from("accepted_tasks")
+          .insert([userdata]);
+  
+        if (insertError) {
+          console.error("Error saving accepted task:", insertError);
+          return;
+        }
+  
+        // Update accepted tasks with the job and its associated user details
+        setAcceptedTasks((prev) => [...prev, job]);
+  
+        // Show proposals for the accepted job
+        setShowProposals((prev) => ({
+          ...prev,
+          [job.uuid]: true,
+        }));
+      } catch (error) {
+        console.error("Error accepting task:", error);
+      }
     }
   };
+  
+
+  const handleProfileSubmit = async () => {
+    const { error } = await supabase.from("user").upsert({ name, walletkey: walletKey });
+    if (error) {
+      alert("Error creating profile.");
+    } else {
+      setIsProfileCreated(true);
+      setProfileDialogOpen(false);
+      alert("Profile created successfully!");
+    }
+  };  
+
 
   // Verify the task as done
   const verifyTaskAsDone = (jobUuid: string) => {
@@ -183,6 +290,7 @@ function Page() {
                 <p className="text-sm text-gray-400">Description : {job.discription}</p>
                 <div className="flex justify-between items-center">
                   <p>Salary: ₹{job.price}</p>
+                
                   <div className="flex flex-row gap-1 items-center">
                     <MapPin size={20} />
                     <p>{job.location ? `${job.location}` : "Remote"}</p>
@@ -218,26 +326,62 @@ function Page() {
         </section>
       </main>
 
-      {/* Proposals Section */}
-      <aside className="w-1/6 p-5 bg-gray-800 rounded-xl h-max overflow-y-auto">
-        <h2 className="text-xl mb-4">Your Proposals</h2>
-        {acceptedTasks.length > 0 ? (
-          acceptedTasks.map((task) => (
-            <div key={task.uuid} className="flex flex-col gap-3 p-4 bg-gray-700 rounded-lg mb-5">
-              <p className="text-lg">{task.title}</p>
-              <p className="text-sm">Earn ₹  {task.price}</p>
-              <button
-                className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 h-10 transition"
-                onClick={() => verifyTaskAsDone(task.uuid)}
-              >
-                Verify as Done
-              </button>
-            </div>
-          ))
-        ) : (
-          <p className="text-gray-500">No accepted tasks yet.</p>
-        )}
-      </aside>
+      <aside className="w-1/6 p-5 bg-gray-800 rounded-xl h-max w-max text-center overflow-y-auto">
+      <h2 className="text-xl mb-4">Your Proposals</h2>
+      {proposals.length > 0 ? (
+        proposals.map((job) => (
+          <div key={job.uuid} className="flex flex-col gap-3 p-4 bg-gray-700 rounded-lg mb-5">
+            <p className="text-lg">Job Title: {job.title}</p>
+            <p className="text-sm">Budget: ₹{job.price}</p>
+            <p className="text-sm">Location: {job.location ? `${job.location}` : "Remote"}</p>
+            {job.proposaluser && (
+              <>
+                <p className="text-sm">User Name: {job.user.name}</p>
+                <p className="text-sm">Wallet Key: {job.user.key}</p>
+              </>
+            )}
+            {/* ... (rest of the proposal rendering logic) */}
+          </div>
+        ))
+      ) : (
+        <p className="text-gray-500">No proposals yet.</p>
+      )}
+    </aside>
+
+      <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
+        <DialogContent className="bg-gray-800 p-6 rounded-lg">
+          <DialogHeader>
+            <DialogTitle>Create Your Profile</DialogTitle>
+            <DialogDescription>Please enter your details below to create a profile.</DialogDescription>
+          </DialogHeader>
+          <div className="mt-4">
+            <label className="block text-gray-400">Name:</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full p-2 mt-1 rounded bg-gray-700"
+            />
+          </div>
+          <div className="mt-4">
+            <label className="block text-gray-400">Wallet Address:</label>
+            <input
+              type="text"
+              value={walletKey}
+              onChange={(e) => setWalletKey(e.target.value)}
+              className="w-full p-2 mt-1 rounded bg-gray-700"
+            />
+          </div>
+          <div className="mt-4 flex justify-end">
+            <button
+              onClick={handleProfileSubmit}
+              className="bg-green-500 hover:bg-green-600 text-white p-2 rounded"
+            >
+              Save Profile
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -2,11 +2,33 @@
 
 import React, { useState } from "react";
 import { createClient } from "@supabase/supabase-js";
+import { ethers } from "ethers";
+import abi from "../../../contract.json";
 
 const supabaseUrl = "https://alunvxkjhxxnldzxcnio.supabase.co";
 const supabaseKey =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsdW52eGtqaHh4bmxkenhjbmlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mjk0Mzg2ODQsImV4cCI6MjA0NTAxNDY4NH0.7IDyHfwzZkj99aePzOK42ImSHuieIiJDtoHLW1KjlkY";
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+interface Job {
+  uuid: string;
+  title: string;
+  description: string;
+  budget: number;
+  skills: string[];
+  location?: {
+    name: string;
+    stateCode: string;
+    countryCode: string;
+  };
+  proposal?: Array<{
+    user_id: string;
+    proposal: string;
+    status: string | null;
+  }>;
+
+}
+
 
 function CreateJobPage() {
   const [title, setTitle] = useState("");
@@ -16,7 +38,47 @@ function CreateJobPage() {
   const [location, setLocation] = useState("");
   const [skills, setSkills] = useState("");
   const [category, setCategory] = useState("tech");
-  const [error, setError] = useState<string | null>(null);
+const [error, setError] = useState<string | null>(null);
+const [jobs, setJobs] = useState<Job[]>([]);
+const [fetchError, setFetchError] = useState<string>("");
+let counter = 0;
+
+async function loadABI(): Promise<ethers.Contract | null> {
+  try {
+    // Fetch the contract ABI from the contract.json file
+    const Contractabi = abi.abi; // ABI extracted from the JSON file
+    const contractAddress = "0x102Df7040d2ae787d1C4223e23991B84c198D3E8";
+
+    console.log(abi);
+
+    if ((window as any).ethereum) {
+      // Initialize the provider
+      const provider = new ethers.BrowserProvider((window as any).ethereum);
+      await provider.send("eth_requestAccounts", []);
+      const signer = await provider.getSigner();
+
+      // Get the user's wallet address
+      const userAddress = await signer.getAddress();
+      console.log(`Connected: ${userAddress}`);
+
+      // Instantiate the contract with ABI and signer
+      const contract = new ethers.Contract(contractAddress, Contractabi, signer);
+      const transaction = contract.upload(counter, {value: earn.toString()});
+      counter++;
+
+      return contract;
+    } else {
+      alert("Please install MetaMask!");
+      throw new Error("MetaMask not found");
+    }
+    
+  } catch (error) {
+    console.error("An error occurred:", error);
+    throw error;
+  }
+}
+
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -157,13 +219,16 @@ function CreateJobPage() {
             className="col-span-2 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg w-96 transition duration-300"
             onClick={handleSubmit}
             >
-            Create Job
+            Build Job
           </button>
           <button
-            className="col-span-2 bg-red-600 hover:bg-blue-700 text-white py-3 rounded-lg w-96 transition duration-300"
+            type="submit"
+            className="col-span-2 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg w-96 transition duration-300"
+            onClick={loadABI}
             >
-            Add Payment
+            Create Job
           </button>
+       
             </div>
       </div>
     </div>
