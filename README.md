@@ -43,7 +43,7 @@ To get started with the Decentralized Task Marketplace, follow these steps:
 
 - **Blockchain**: [Etherium Works with Polygon testnet for now.]
 - **Smart Contracts**: Implemented using [Solidity]
-- **Frontend**: [Next.JS, TypeScript, ]
+- **Frontend**: [Next.JS, TypeScript]
 - **Backend**: [Supabase, With SQL DB Integration]
 
 ## Contributing
