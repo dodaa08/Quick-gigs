@@ -41,18 +41,15 @@ To get started with the Decentralized Task Marketplace, follow these steps:
 
 ## Technology Stack
 
-- **Blockchain**: [Specify blockchain technology used, e.g., Ethereum]
-- **Smart Contracts**: Implemented using [Specify language, e.g., Solidity]
-- **Frontend**: [Specify frameworks, e.g., React, Vue.js]
-- **Backend**: [Specify backend technologies, e.g., Node.js, Express]
+- **Blockchain**: [Etherium Works with Polygon testnet for now.]
+- **Smart Contracts**: Implemented using [Solidity]
+- **Frontend**: [Next.JS, TypeScript, ]
+- **Backend**: [Supabase, With SQL DB Integration]
 
 ## Contributing
 
 We welcome contributions from the community! If you would like to help improve the Decentralized Task Marketplace, please fork the repository and submit a pull request.
 
-## License
-
-This project is licensed under the [MIT License](LICENSE).
 
 ## Contact
 
