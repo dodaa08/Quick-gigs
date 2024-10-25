@@ -1,10 +1,16 @@
 'use client'
+
 import React, { useEffect, useState } from "react";
 import { Home, Search, User, MapPin, Plus } from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import TaskCard from "@/components/taskcard";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../../components/ui/dialog";
+import { ethers } from "ethers";
+import abi from "../../../contract.json";
+import { useToast } from "@/components/hooks/use-toast";
+
+
 
 // Job interface
 interface Job {
@@ -41,27 +47,15 @@ interface user{
   walletkey: string;
 }
 // Proposal interface
-interface Proposal {
-  user_id: string;
-  proposal: string;
-  status: string | null;
-}
+
 
 // Task interface
-type Task = {
-  id: number;
-  title: string;
-  description: string;
-  price: number;
-  skills: string[];
-  location: string;
-};
+
 
 function Page() {
+  const[id, setid] = useState();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
-  const [acceptedTasks, setAcceptedTasks] = useState<Job[]>([]);
-  const [userProposals, setUserProposals] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showAllJobs, setShowAllJobs] = useState(true);
   const [fetchError, setFetchError] = useState<string>("");
@@ -70,9 +64,56 @@ function Page() {
   const [name, setName] = useState("");
   const [walletKey, setWalletKey] = useState("");
   const [isProfileCreated, setIsProfileCreated] = useState(false);
-  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
-  const [proposals, setProposals] = useState<Job[]>([]);
-  const [proposalsuser, setProposalsuser] = useState<Job[]>([]);
+  const [proptitle, setproptitle] = useState("");
+  const [username, setusername] = useState("");
+  const [useraddress, setuseraddress] = useState("");
+  const [open, setOpen] = useState(false);
+  const [profilecreated, checkprofilecreated] = useState(false);
+  const [propsals, setproposals] = useState([]);
+  const {toast} = useToast();
+
+
+
+  let counter = 0;
+  async function loadABI(): Promise<ethers.Contract | null> {
+    try {
+      // Fetch the contract ABI from the contract.json file
+      const Contractabi = abi.abi; // ABI extracted from the JSON file
+      const contractAddress = "0x102Df7040d2ae787d1C4223e23991B84c198D3E8";
+  
+      console.log(abi);
+  
+      if ((window as any).ethereum) {
+        // Initialize the provider
+        const provider = new ethers.BrowserProvider((window as any).ethereum);
+        await provider.send("eth_requestAccounts", []);
+        const signer = await provider.getSigner();
+  
+        // Get the user's wallet address
+        const userAddress = await signer.getAddress();
+        console.log(`Connected: ${userAddress}`);
+  
+        // Instantiate the contract with ABI and signer
+        const contract = new ethers.Contract(contractAddress, Contractabi, signer);
+  
+        // Await the transaction call to the complete function
+        const transaction = await contract.complete(userAddress, counter);
+        counter++;
+        console.log("Transaction: ", transaction);
+  
+        return contract;
+      } else {
+        alert("Please install MetaMask!");
+        throw new Error("MetaMask not found");
+      }
+  
+    } catch (error) {
+      console.error("An error occurred:", error);
+      throw error;
+    }
+  }
+
+
   // Fetch jobs and tasks from Supabase
   useEffect(() => {
     const fetchJobs = async () => {
@@ -91,136 +132,142 @@ function Page() {
   }, []);
 
 
-  useEffect(() => {
-    const fetchprop = async () => {
-      const { data, error } = await supabase.from<user>("jobs").select("*");
-      if (error) {
-        setFetchError("Error fetching jobs.");
-        console.log(error);
-      } else if (data) {
-        setProposals(data); // Set the proposals with the fetched jobs
-        setFetchError("");
-      }
-    };
-
-    fetchprop();
-  }, []);
-
-  useEffect(() => {
-    const fetchuser = async () => {
-      const { data, error } = await supabase.from<user>("user").select("*");
-      if (error) {
-        setFetchError("Error fetching jobs.");
-        console.log(error);
-      } else if (data) {
-        setProposalsuser(data); // Set the proposals with the fetched jobs
-        setFetchError("");
-      }
-    };
-
-    fetchuser();
-  }, []);
 
 
-  useEffect(() => {
-    const fetchJobs = async () => {
-      const { data, error } = await supabase.from<user>("user").select("*");
-      if (error) {
-        setFetchError("Error fetching jobs.");
-        console.log(error);
-      } else  {
-        setuser(data);
-        setFetchError("");
-      }
-    };
 
-    const fetchTasks = async () => {
-      const { data, error } = await supabase.from<Task>("tasks").select("*");
-      if (error) {
-        setFetchError("Error fetching tasks.");
-        setTasks([]);
-        console.log(error);
-      } else if (data) {
-        setTasks(data);
-        setFetchError("");
-      }
-    };
 
-    fetchJobs();
-    fetchTasks();
-  }, []);
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // useEffect(() => {
+  //   const fetchJobs = async () => {
+  //     const { data, error } = await supabase.from<user>("user").select("*");
+  //     if (error) {
+  //       setFetchError("Error fetching jobs.");
+  //       console.log(error);
+  //     } else  {
+  //       setuser(data);
+  //       setFetchError("");
+  //     }
+  //   };
+
+  //   const fetchTasks = async () => {
+  //     const { data, error } = await supabase.from<Task>("tasks").select("*");
+  //     if (error) {
+  //       setFetchError("Error fetching tasks.");
+  //       setTasks([]);
+  //       console.log(error);
+  //     } else if (data) {
+  //       setTasks(data);
+  //       setFetchError("");
+  //     }
+  //   };
+
+  //   fetchJobs();
+  //   fetchTasks();
+  // }, []);
 
   // Filter jobs by category
-  useEffect(() => {
-    setFilteredJobs(
-      showAllJobs
-        ? jobs
-        : selectedCategory
-        ? jobs.filter((job) => job.category === selectedCategory)
-        : []
-    );
-  }, [selectedCategory, jobs, showAllJobs]);
+ 
 
   // Handle category selection
-  const handleCategoryChange = (category: string | null) => {
-    setSelectedCategory(category);
-    setShowAllJobs(category === null);
-  };
+  
 
   // Accept task and add it to accepted tasks
-  const acceptTask = async (job: Job) => {
-    if (!isProfileCreated) {
-      setProfileDialogOpen(true);
-    } else {
-      try {
-        const userdata = {
-          name: name,
-          walletKey: walletKey, // Ensure this matches your DB schema
-        };
-        // Save the accepted task to Supabase
-        const { data, error: insertError } = await supabase
-          .from("accepted_tasks")
-          .insert([userdata]);
   
-        if (insertError) {
-          console.error("Error saving accepted task:", insertError);
-          return;
+  const profile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (username === "" || useraddress === "") {
+        alert("Fill in details First..");
+        return;
+    }
+
+    const userdet = {
+        name: username,
+        walletkey: useraddress,
+    };
+
+    try {
+        // Check if user already exists
+        const { data, error } = await supabase
+            .from('user')
+            .select('*')
+            .eq('walletkey', useraddress)
+            .single();
+
+        if (data) {
+            // If user exists, update the profile
+            await supabase
+                .from('user')
+                .update(userdet)
+                .eq('walletkey', useraddress);
+            alert("Profile Updated..");
+        } else {
+            // If user doesn't exist, insert a new profile
+            await supabase.from('user').insert([userdet]);
+            alert("Profile Created..");
         }
-  
-        // Update accepted tasks with the job and its associated user details
-        setAcceptedTasks((prev) => [...prev, job]);
-  
-        // Show proposals for the accepted job
-        setShowProposals((prev) => ({
-          ...prev,
-          [job.uuid]: true,
-        }));
-      } catch (error) {
-        console.error("Error accepting task:", error);
-      }
+
+        checkprofilecreated(true); // Set profilecreated to true
+    } catch (err) {
+        console.log(err);
     }
+};
+
+
+ 
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text)
+      .then(() => {
+        // You can add a notification or alert here if you want to inform the user
+        toast({ title: "Fill the form", variant: "destructive"})  
+      })
+      .catch(err => {
+        console.error('Failed to copy text: ', err);
+      });
   };
+
+
+  const proposal = async () => {
+    try {
+      let { data: jobs, error } = await supabase
+        .from('jobs')
+        .select('title');  // Fetch only the title
   
-
-  const handleProfileSubmit = async () => {
-    const { error } = await supabase.from("user").upsert({ name, walletkey: walletKey });
-    if (error) {
-      alert("Error creating profile.");
-    } else {
-      setIsProfileCreated(true);
-      setProfileDialogOpen(false);
-      alert("Profile created successfully!");
+      if (error) {
+        alert("Recheck the code");
+        console.log("Error fetching the data...");
+      } else {
+        // Assuming jobs is an array of objects, map over it to extract titles
+        const titles = jobs.map(job => job.title);  // Extract the titles
+        console.log("Job Titles: ", titles);
+        setproptitle(titles);  // Assuming setproptitle is a state setter
+      }
+    } catch (err) {
+      console.log("Error: ", err);
     }
-  };  
+   
 
 
-  // Verify the task as done
-  const verifyTaskAsDone = (jobUuid: string) => {
-    setAcceptedTasks((prev) =>
-      prev.map((task) =>
-        task.uuid === jobUuid ? { ...task, status: "Verified as Done" } : task
-      )
-    );
+
+
+    const userdet = {
+      name: username,
+      walletkey: useraddress,
+  };
+
+   
   };
 
   return (
@@ -228,8 +275,12 @@ function Page() {
       {/* Sidebar */}
       <aside className="w-1/6 bg-gray-800 h-max rounded-xl text-white p-5">
         <nav>
-          <ul>
-            {[{ icon: Home, text: "Home" }, { icon: Search, text: "Explore" }, { icon: User, text: "Profile" }].map(
+          <Dialog>
+         
+          <DialogTrigger
+          className=""
+> <ul>
+            {[{ icon: User, text: "Profile" }].map(
               ({ icon: Icon, text }) => (
                 <li key={text} className="flex items-center gap-3 p-3 text-lg cursor-pointer hover:text-blue-400">
                   <Icon className="w-6 h-6" />
@@ -237,7 +288,36 @@ function Page() {
                 </li>
               )
             )}
-          </ul>
+          </ul> 
+          <DialogContent>
+  
+    <DialogTitle>User Details <br /><br /> Click on the element you want to copy</DialogTitle>
+    <DialogDescription>
+    <div className="bg-blue-200 py-10 px-10 rounded-xl flex justify-evenly">
+      <h1 
+        className="bg-white text-black text-xl py-4 px-2 h-18 w-40 rounded-xl mr-2 cursor-pointer hover:bg-red-200 transition duration-200"
+        onClick={() => handleCopy(`${username}`)} // Copy the name
+      >
+        Name  {username}
+      </h1>
+      <h1 
+        className="bg-white text-black text-xl py-4 px-2 w-auto rounded-xl cursor-pointer hover:bg-red-200 transition duration-200"
+        onClick={() => handleCopy(`${useraddress}`)} // Copy the wallet address
+      >
+        Wallet Address {useraddress}
+      </h1>
+    </div>
+    </DialogDescription>
+ 
+ 
+</DialogContent>
+        </DialogTrigger>
+
+
+
+         
+         
+            </Dialog>
         </nav>
         <div className="mt-10">
           <h2 className="text-xl mb-4">Categories</h2>
@@ -246,7 +326,7 @@ function Page() {
               type="checkbox"
               id="showAllJobs"
               checked={showAllJobs}
-              onChange={(e) => handleCategoryChange(e.target.checked ? null : selectedCategory)}
+             
               className="form-checkbox"
             />
             <label htmlFor="showAllJobs" className="cursor-pointer">
@@ -259,7 +339,7 @@ function Page() {
                 type="radio"
                 id={category}
                 checked={selectedCategory === category}
-                onChange={() => handleCategoryChange(category)}
+                
                 className="form-radio"
               />
               <label htmlFor={category} className="capitalize">{category}</label>
@@ -298,12 +378,68 @@ function Page() {
                 </div>
                 <p>Skills Required: {job.skills.length > 0 ? job.skills : "none"}</p>
                 <div className="mt-4 flex gap-3">
-                  <button
-                    className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 transition"
-                    onClick={() => acceptTask(job)}
-                  >
-                    Accept
-                  </button>
+                  {profilecreated && (
+ <button
+ className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 transition"
+onClick={proposal}
+>
+ Accept
+</button>
+                  )}
+                  {
+                    !profilecreated   && (
+                     <>
+                    <Dialog open={open} onOpenChange={(isOpen) => setOpen(isOpen)}>
+  <DialogTrigger>
+    <button
+      onClick={() => setOpen(true)}
+      className="bg-red-500 text-white py-2 px-4 rounded hover:bg-green-600 transition"
+    >
+      Create a Profile
+    </button>
+  </DialogTrigger>
+
+  <DialogContent>
+    <div className="relative">
+      <DialogTitle>Create a Profile to automate fund transfer...</DialogTitle>
+
+      {/* Custom Close Button */}
+      <button
+        onClick={() => setOpen(false)}
+        className="absolute top-2 right-2 text-3xl font-bold text-gray-700 hover:text-gray-900"
+      >
+        ×
+      </button>
+    </div>
+
+    <div className="flex flex-col mt-4">
+      <input
+        type="text"
+        placeholder="Enter Your Name"
+        className="h-10 w-64 rounded-l mb-5 text-black text-l py-2 px-4"
+        value={username} // Controlled component
+        onChange={(e) => setusername(e.target.value)} // Ensure this is properly set
+      />
+      <input
+        type="text"
+        placeholder="Enter Your Wallet-Address"
+        className="h-10 w-96 rounded-l text-black text-l py-2 px-4"
+        value={useraddress} // Controlled component
+        onChange={(e) => setuseraddress(e.target.value)} // Ensure this is properly set
+      />
+
+      <button
+        className="bg-green-600 py-3 px-5 w-28 rounded flex justify-center items-center align-center text-center mt-4 hover:scale-110 transition duration-200"
+        onClick={profile}
+      >
+        Create
+      </button>
+    </div>
+  </DialogContent>
+</Dialog>
+                     </>
+                    )
+                  }
                 </div>
               </div>
             ))
@@ -328,62 +464,71 @@ function Page() {
 
       <aside className="w-1/6 p-5 bg-gray-800 rounded-xl h-max w-max text-center overflow-y-auto">
       <h2 className="text-xl mb-4">Your Proposals</h2>
-      {proposals.length > 0 ? (
-        proposals.map((job) => (
-          <div key={job.uuid} className="flex flex-col gap-3 p-4 bg-gray-700 rounded-lg mb-5">
-            <p className="text-lg">Job Title: {job.title}</p>
-            <p className="text-sm">Budget: ₹{job.price}</p>
-            <p className="text-sm">Location: {job.location ? `${job.location}` : "Remote"}</p>
-            {job.proposaluser && (
-              <>
-                <p className="text-sm">User Name: {job.user.name}</p>
-                <p className="text-sm">Wallet Key: {job.user.key}</p>
-              </>
-            )}
-            {/* ... (rest of the proposal rendering logic) */}
-          </div>
-        ))
-      ) : (
-        <p className="text-gray-500">No proposals yet.</p>
-      )}
-    </aside>
+       {
+        proptitle && (
+          <>
+          <div>
 
-      <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
-        <DialogContent className="bg-gray-800 p-6 rounded-lg">
-          <DialogHeader>
-            <DialogTitle>Create Your Profile</DialogTitle>
-            <DialogDescription>Please enter your details below to create a profile.</DialogDescription>
-          </DialogHeader>
-          <div className="mt-4">
-            <label className="block text-gray-400">Name:</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full p-2 mt-1 rounded bg-gray-700"
-            />
+          <div className="bg-gray-900 rounded-l py-4 px-5 text-xl flex flex-col justify-center items-center align-center">
+            {proptitle}
+            <div>  
+           Job for {username}
+            </div>
+           
           </div>
-          <div className="mt-4">
-            <label className="block text-gray-400">Wallet Address:</label>
-            <input
-              type="text"
-              value={walletKey}
-              onChange={(e) => setWalletKey(e.target.value)}
-              className="w-full p-2 mt-1 rounded bg-gray-700"
-            />
+          <div>
+            <button className="bg-green-400 py-4 px-4 rounded-xl mt-3 hover:scale-110 transition duration-200 text-blue-700" onClick={loadABI}>Verify As Done..</button>
           </div>
-          <div className="mt-4 flex justify-end">
-            <button
-              onClick={handleProfileSubmit}
-              className="bg-green-500 hover:bg-green-600 text-white p-2 rounded"
-            >
-              Save Profile
-            </button>
           </div>
-        </DialogContent>
-      </Dialog>
+          </>
+        )
+       }
+    </aside>
     </div>
   );
 }
 
 export default Page;
+
+
+
+
+
+
+
+
+{/* <Dialog>
+<DialogTrigger
+  className="bg-gradient-to-r from-green-400 to-green-600 px-4 py-2 border-black text-white rounded-lg shadow-md transform transition-transform duration-700 ease-in-out hover:scale-110"
+>
+  Create a Proposal
+</DialogTrigger>
+<DialogContent>
+  <DialogHeader>
+    <DialogTitle>Create a Proposal</DialogTitle>
+    <DialogDescription>
+      <textarea
+        name="message"
+        id="message"
+        rows={5}
+        className="p-2 border-2 border-gray-300 rounded-lg w-11/12 h-64 text-black"
+        placeholder="Describe yourself in 100 words"
+        onChange={(e) => setLetter(e.target.value)}
+        value={letter}
+      ></textarea>
+    </DialogDescription>
+  </DialogHeader>
+  <button
+    className="bg-green-400 text-white w-20 py-2 px-2 rounded ml-96 hover:scale-110"
+    onClick={() => {
+      if (job.proposal && userId) {
+        updateProposal([...job.proposal, { user_id: userId, proposal: letter, status: null }], job.uuid);
+      } else if (userId) {
+        updateProposal([{ user_id: userId, proposal: letter, status: null }], job.uuid);
+      }
+    }}
+  >
+    Send
+  </button>
+</DialogContent>
+</Dialog> */}

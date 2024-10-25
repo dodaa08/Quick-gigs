@@ -2,19 +2,15 @@
 "use client";
 
 
-
-  
-  import { useUser } from "@clerk/nextjs";
-  import Header from "./header/header"
-  import { User } from "@clerk/nextjs/server";
+import { useUser } from "@clerk/nextjs";
+import Header from "./header/header"
+import { User } from "@clerk/nextjs/server";
 
 import { useEffect } from "react";
 import Link from "next/link";
 import { useState } from "react";
 import { ethers } from "ethers";
 import abi from "../../contract.json";
-
-
 
 
 function Landing() {
@@ -70,7 +66,7 @@ function Landing() {
             <div className="flex ">
                 <img src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExMzdiNzdiZ285NmdoMG40c2xhamtucGsyOHZ3anB5cWxnNnY1dmgyYSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l3q2WMhNcyFOWP280/giphy.webp" alt="" className="h-64 rounded-xl" />
             </div>
-                <h1 className="mb-10 text-xl mt-5">Solution anything and everything.</h1>
+                <h1 className="mb-10 text-xl mt-5">Solution for simplifying the gig work...</h1>
             </div>
 
             {isLoaded && isSignedIn && (
