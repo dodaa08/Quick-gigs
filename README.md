@@ -4,6 +4,8 @@
 
 The Decentralized Task Marketplace is a platform where users can post and complete tasks such as assignments, laundry, or various services. This marketplace operates similarly to social media, allowing users to engage with one another to complete everyday tasks efficiently.
 
+view at :-  https://x.com/kartik___doda/status/1850478191934394825
+
 ## Features
 
 ### 1. User-friendly Task Posting
