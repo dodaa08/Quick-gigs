@@ -1,9 +1,8 @@
 # Decentralized Task Marketplace
 
+Here is how it works
 
-
-file:///home/kartik/Downloads/ssstwitter.com_1752808749938.mp4
--12:-85:64:65
+https://github.com/user-attachments/assets/f8b92d29-2c95-4a4f-aa1d-78cc41cd629d
 
 
 
